@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Probabilidades y Distribuciones</title>
+<script src="https://cdn.jsdelivr.net/npm/jstat@1.9.6/dist/jstat.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #1a56db;
+    --primary-dark: #1145b5;
+    --accent: #e74c3c;
+    --green: #27ae60;
+    --orange: #f39c12;
+    --purple: #8e44ad;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --border: #d1dbe8;
+    --text: #1e293b;
+    --muted: #64748b;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, #1a56db 0%, #0e3a9a 100%); color: white; padding: 24px 32px; }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header p { opacity: .8; font-size: .9rem; margin-top: 4px; }
+
+  .tab-nav { background: white; border-bottom: 2px solid var(--border); display: flex; flex-wrap: wrap; padding: 0 16px; gap: 2px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+  .tab-btn { padding: 14px 16px; border: none; background: none; cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap; }
+  .tab-btn:hover { color: var(--primary); background: #f0f4ff; }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .tab-content { display: none; padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; }
+  .card h2 { font-size: 1.1rem; margin-bottom: 18px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+  input, select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 7px; font-size: .95rem; color: var(--text); transition: border .2s; }
+  input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+
+  .btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background .2s; margin-top: 6px; }
+  .btn:hover { background: var(--primary-dark); }
+
+  .results { background: #f8faff; border: 1.5px solid #c7d7f9; border-radius: var(--radius); padding: 18px; margin-top: 18px; }
+  .results h3 { font-size: .9rem; color: var(--primary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .result-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #e2e8f0; font-size: .93rem; }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { color: var(--muted); }
+  .result-value { font-weight: 700; color: var(--text); font-family: monospace; font-size: 1rem; }
+  .result-value.highlight { color: var(--accent); font-size: 1.05rem; }
+  .result-value.green { color: var(--green); }
+  .result-value.orange { color: var(--orange); }
+  .result-value.purple { color: var(--purple); }
+
+  .chart-wrap { position: relative; height: 260px; }
+  .warning { background: #fff8e1; border: 1px solid #f39c12; border-radius: 7px; padding: 10px 14px; font-size: .85rem; color: #7d5a00; margin-top: 10px; }
+  .error-msg { background: #fff0f0; border: 1px solid #e74c3c; border-radius: 7px; padding: 10px 14px; font-size: .85rem; color: #c0392b; margin-top: 10px; display: none; }
+
+  .tag { display: inline-block; background: #e0e7ff; color: var(--primary); font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .05em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th { background: var(--primary); color: white; padding: 8px 10px; text-align: left; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  tr:nth-child(even) td { background: #f8faff; }
+  .table-wrap { max-height: 240px; overflow-y: auto; margin-top: 10px; border-radius: 7px; border: 1px solid var(--border); }
+
+  .ic-selector { display: flex; gap: 8px; margin-bottom: 16px; }
+  .ic-btn { flex: 1; padding: 10px 8px; border: 2px solid var(--border); background: white; border-radius: 8px; font-size: .8rem; font-weight: 600; cursor: pointer; text-align: center; transition: all .2s; }
+  .ic-btn.active { border-color: var(--primary); background: #eff4ff; color: var(--primary); }
+  .inv-divider { font-size:.72rem; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.07em; padding:10px 0 2px; margin-top:6px; border-top:2px dashed #ddd6fe; display:flex; align-items:center; gap:6px; }
+  .inv-divider::before { content:'⁻¹'; font-size:1rem; }
+  .btn-inv { width:100%; padding:10px; background:white; color:var(--purple); border:2px solid var(--purple); border-radius:8px; font-size:.9rem; font-weight:700; cursor:pointer; transition:all .2s; margin-top:6px; }
+  .btn-inv:hover { background:#f3e8ff; }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+  .inv-box { border:2px dashed #ddd6fe; border-radius:var(--radius); padding:14px; margin-top:16px; background:#faf5ff; }
+  .inv-box h4 { font-size:.78rem; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+  .inv-box h4::before { content:'⁻¹'; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📊 Calculadora de Probabilidades y Distribuciones</h1>
+  <p>Ingresa los parámetros y calcula probabilidades, valores críticos y gráficas interactivas.</p>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('normal')">Normal</button>
+  <button class="tab-btn" onclick="showTab('t')">T-Student</button>
+  <button class="tab-btn" onclick="showTab('chi2')">Chi²</button>
+  <button class="tab-btn" onclick="showTab('f')">Fisher F</button>
+  <button class="tab-btn" onclick="showTab('expon')">Exponencial</button>
+  <button class="tab-btn" onclick="showTab('poisson')">Poisson</button>
+  <button class="tab-btn" onclick="showTab('binom')">Binomial</button>
+  <button class="tab-btn" onclick="showTab('uniforme')">Uniforme</button>
+  <button class="tab-btn" onclick="showTab('prop')">Dist. Proporción</button>
+  <button class="tab-btn" onclick="showTab('media')">Dist. Media (TLC)</button>
+  <button class="tab-btn" onclick="showTab('ic')">Intervalos de Confianza</button>
+</nav>
+
+<!-- ===== NORMAL ===== -->
+<div id="tab-normal" class="tab-content active">
+  <div class="grid">
+    <div class="card">
+      <h2>🔔 Distribución Normal <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Media (μ)</label><input type="number" id="n-mu" value="0" step="any"></div>
+      <div class="form-group"><label>Desviación estándar (σ)</label><input type="number" id="n-sigma" value="1" min="0.0001" step="any"></div>
+      <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="n-x" value="1.5" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (0-1)</label><input type="number" id="n-p" value="0.95" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcNormal()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcNormalInv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="error-msg" id="n-err"></div>
+      <div class="results" id="n-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">f(x) — densidad en x</span><span class="result-value" id="n-pdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X ≤ x)</span><span class="result-value highlight" id="n-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X > x)</span><span class="result-value green" id="n-sf"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular x</div>
+        <div class="result-row"><span class="result-label">x tal que P(X ≤ x) = p</span><span class="result-value orange" id="n-ppf"></span></div>
+        <div class="result-row"><span class="result-label">x tal que P(X > x) = p</span><span class="result-value purple" id="n-isf"></span></div>
+        <div class="result-row"><span class="result-label">Intervalo simétrico P(μ−E ≤ X ≤ μ+E) = p</span><span class="result-value" id="n-sym"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="n-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== T-STUDENT ===== -->
+<div id="tab-t" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>📐 T de Student <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Grados de libertad (df)</label><input type="number" id="t-df" value="10" min="1" step="1"></div>
+      <div class="form-group"><label>Valor de t (para probabilidades directas)</label><input type="number" id="t-val" value="2.0" step="any"></div>
+      <div class="form-group"><label>Nivel de significancia α (para valores críticos)</label><input type="number" id="t-alpha" value="0.05" min="0.001" max="0.5" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (para función inversa, 0-1)</label><input type="number" id="t-p-inv" value="0.975" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcT()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcTInv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="results" id="t-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(T ≤ t)</span><span class="result-value highlight" id="t-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(T > t)</span><span class="result-value green" id="t-sf"></span></div>
+        <div class="result-row"><span class="result-label">P(|T| > |t|) bilateral</span><span class="result-value" id="t-bilateral"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico bilateral ±t_(α/2)</span><span class="result-value orange" id="t-crit-bi"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico unilateral derecho t_(α)</span><span class="result-value orange" id="t-crit-uni"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular t</div>
+        <div class="result-row"><span class="result-label">t tal que P(T ≤ t) = p</span><span class="result-value purple" id="t-ppf"></span></div>
+        <div class="result-row"><span class="result-label">t tal que P(T > t) = p</span><span class="result-value purple" id="t-inv-sf"></span></div>
+        <div class="result-row"><span class="result-label">|t| tal que P(|T| > |t|) = p (bilateral)</span><span class="result-value purple" id="t-inv-bi"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="t-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== CHI2 ===== -->
+<div id="tab-chi2" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>χ² Chi Cuadrada <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Grados de libertad (df)</label><input type="number" id="c-df" value="5" min="1" step="1"></div>
+      <div class="form-group"><label>Valor de χ² (para probabilidades directas)</label><input type="number" id="c-val" value="7.0" min="0" step="any"></div>
+      <div class="form-group"><label>Nivel de significancia α (para valores críticos)</label><input type="number" id="c-alpha" value="0.05" min="0.001" max="0.5" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (para función inversa, 0-1)</label><input type="number" id="c-p-inv" value="0.95" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcChi2()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcChi2Inv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="results" id="c-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(χ² ≤ valor)</span><span class="result-value highlight" id="c-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(χ² > valor)</span><span class="result-value green" id="c-sf"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico superior χ²_(1−α)</span><span class="result-value orange" id="c-crit-sup"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico inferior χ²_(α)</span><span class="result-value orange" id="c-crit-inf"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular χ²</div>
+        <div class="result-row"><span class="result-label">χ² tal que P(χ² ≤ x) = p</span><span class="result-value purple" id="c-ppf"></span></div>
+        <div class="result-row"><span class="result-label">χ² tal que P(χ² > x) = p</span><span class="result-value purple" id="c-inv-sf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="c-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== F ===== -->
+<div id="tab-f" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>📈 Distribución F de Fisher <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Grados de libertad numerador (df₁)</label><input type="number" id="f-df1" value="5" min="1" step="1"></div>
+      <div class="form-group"><label>Grados de libertad denominador (df₂)</label><input type="number" id="f-df2" value="10" min="1" step="1"></div>
+      <div class="form-group"><label>Valor de F (para probabilidades directas)</label><input type="number" id="f-val" value="3.0" min="0" step="any"></div>
+      <div class="form-group"><label>Nivel de significancia α (para valor crítico)</label><input type="number" id="f-alpha" value="0.05" min="0.001" max="0.5" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (para función inversa, 0-1)</label><input type="number" id="f-p-inv" value="0.95" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcF()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcFInv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="results" id="f-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(F ≤ valor)</span><span class="result-value highlight" id="f-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(F > valor)</span><span class="result-value green" id="f-sf"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico F_(1−α)</span><span class="result-value orange" id="f-crit"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular F</div>
+        <div class="result-row"><span class="result-label">F tal que P(F ≤ x) = p</span><span class="result-value purple" id="f-ppf"></span></div>
+        <div class="result-row"><span class="result-label">F tal que P(F > x) = p</span><span class="result-value purple" id="f-inv-sf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="f-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== EXPONENCIAL ===== -->
+<div id="tab-expon" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>⚡ Distribución Exponencial <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Tasa λ (lambda)</label><input type="number" id="e-lambda" value="0.5" min="0.0001" step="any"></div>
+      <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="e-x" value="2.0" min="0" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (0-1)</label><input type="number" id="e-p" value="0.90" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcExpon()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcExponInv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="results" id="e-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(X ≤ x)</span><span class="result-value highlight" id="e-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X > x)</span><span class="result-value green" id="e-sf"></span></div>
+        <div class="result-row"><span class="result-label">Media 1/λ</span><span class="result-value" id="e-mean"></span></div>
+        <div class="result-row"><span class="result-label">Varianza 1/λ²</span><span class="result-value" id="e-var"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular x</div>
+        <div class="result-row"><span class="result-label">x tal que P(X ≤ x) = p → −ln(1−p)/λ</span><span class="result-value orange" id="e-ppf"></span></div>
+        <div class="result-row"><span class="result-label">x tal que P(X > x) = p → −ln(p)/λ</span><span class="result-value purple" id="e-isf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="e-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== POISSON ===== -->
+<div id="tab-poisson" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>🎲 Distribución de Poisson <span class="tag">Discreta</span></h2>
+      <div class="form-group"><label>Media λ (tasa de eventos)</label><input type="number" id="po-lambda" value="3" min="0.001" step="any"></div>
+      <div class="form-group"><label>Número de eventos k</label><input type="number" id="po-k" value="4" min="0" step="1"></div>
+      <div class="form-group"><label>Percentil p (0-1)</label><input type="number" id="po-p" value="0.90" min="0.001" max="0.999" step="any"></div>
+      <button class="btn" onclick="calcPoisson()">Calcular</button>
+      <div class="results" id="po-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(X = k)</span><span class="result-value highlight" id="po-pmf"></span></div>
+        <div class="result-row"><span class="result-label">P(X ≤ k)</span><span class="result-value green" id="po-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X > k)</span><span class="result-value" id="po-sf"></span></div>
+        <div class="result-row"><span class="result-label">k mínimo tal que P(X≤k) ≥ p</span><span class="result-value orange" id="po-ppf"></span></div>
+      </div>
+    </div>
+    <div>
+      <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="po-chart"></canvas></div></div>
+      <div class="card" style="margin-top:16px">
+        <h2>Tabla de probabilidades</h2>
+        <div class="table-wrap">
+          <table id="po-table">
+            <thead><tr><th>k</th><th>P(X=k)</th><th>P(X≤k)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BINOMIAL ===== -->
+<div id="tab-binom" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>🪙 Distribución Binomial <span class="tag">Discreta</span></h2>
+      <div class="form-group"><label>Número de ensayos (n)</label><input type="number" id="b-n" value="20" min="1" step="1"></div>
+      <div class="form-group"><label>Probabilidad de éxito (p)</label><input type="number" id="b-p" value="0.3" min="0" max="1" step="any"></div>
+      <div class="form-group"><label>Número de éxitos k</label><input type="number" id="b-k" value="6" min="0" step="1"></div>
+      <div class="form-group"><label>Percentil q (0-1)</label><input type="number" id="b-q" value="0.90" min="0.001" max="0.999" step="any"></div>
+      <button class="btn" onclick="calcBinom()">Calcular</button>
+      <div class="results" id="b-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(X = k)</span><span class="result-value highlight" id="b-pmf"></span></div>
+        <div class="result-row"><span class="result-label">P(X ≤ k)</span><span class="result-value green" id="b-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X > k)</span><span class="result-value" id="b-sf"></span></div>
+        <div class="result-row"><span class="result-label">Media np</span><span class="result-value orange" id="b-mean"></span></div>
+        <div class="result-row"><span class="result-label">Desviación estándar √(np(1-p))</span><span class="result-value" id="b-std"></span></div>
+        <div class="result-row"><span class="result-label">k mínimo tal que P(X≤k) ≥ q</span><span class="result-value purple" id="b-ppf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="b-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== UNIFORME ===== -->
+<div id="tab-uniforme" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>📏 Distribución Uniforme <span class="tag">Continua</span></h2>
+      <div class="form-group"><label>Límite inferior (a)</label><input type="number" id="u-a" value="0" step="any"></div>
+      <div class="form-group"><label>Límite superior (b)</label><input type="number" id="u-b" value="10" step="any"></div>
+      <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="u-x" value="6" step="any"></div>
+      <div class="form-group"><label>Probabilidad p (0-1)</label><input type="number" id="u-p" value="0.75" min="0.001" max="0.999" step="any"></div>
+      <div class="btn-row">
+        <button class="btn" onclick="calcUniforme()">Calcular todo</button>
+        <button class="btn-inv" onclick="calcUniformeInv()">⁻¹ Solo Inversa</button>
+      </div>
+      <div class="results" id="u-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">P(X ≤ x)</span><span class="result-value highlight" id="u-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X > x)</span><span class="result-value green" id="u-sf"></span></div>
+        <div class="result-row"><span class="result-label">Media (a+b)/2</span><span class="result-value" id="u-mean"></span></div>
+        <div class="result-row"><span class="result-label">Varianza (b-a)²/12</span><span class="result-value" id="u-var"></span></div>
+        <div class="inv-divider">Función Inversa — dado p, calcular x</div>
+        <div class="result-row"><span class="result-label">x tal que P(X ≤ x) = p → a + p(b−a)</span><span class="result-value orange" id="u-ppf"></span></div>
+        <div class="result-row"><span class="result-label">x tal que P(X > x) = p → a + (1−p)(b−a)</span><span class="result-value purple" id="u-isf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="u-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== DIST. PROPORCIÓN ===== -->
+<div id="tab-prop" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>📊 Dist. Muestral de Proporción <span class="tag">Muestral</span></h2>
+      <div class="form-group"><label>Proporción poblacional (p)</label><input type="number" id="dp-p" value="0.4" min="0.001" max="0.999" step="any"></div>
+      <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="dp-n" value="100" min="1" step="1"></div>
+      <div class="form-group"><label>Proporción muestral observada (p̂)</label><input type="number" id="dp-phat" value="0.45" min="0" max="1" step="any"></div>
+      <div class="form-group"><label>Percentil q (0-1)</label><input type="number" id="dp-q" value="0.95" min="0.001" max="0.999" step="any"></div>
+      <button class="btn" onclick="calcProp()">Calcular</button>
+      <div id="dp-warn" style="display:none" class="warning"></div>
+      <div class="results" id="dp-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">Error estándar σ_p̂ = √(p(1-p)/n)</span><span class="result-value" id="dp-se"></span></div>
+        <div class="result-row"><span class="result-label">z = (p̂ - p) / σ_p̂</span><span class="result-value" id="dp-z"></span></div>
+        <div class="result-row"><span class="result-label">P(p̂ ≤ valor)</span><span class="result-value highlight" id="dp-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(p̂ > valor)</span><span class="result-value green" id="dp-sf"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico para percentil q</span><span class="result-value orange" id="dp-ppf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="dp-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== DIST. MEDIA TLC ===== -->
+<div id="tab-media" class="tab-content">
+  <div class="grid">
+    <div class="card">
+      <h2>📉 Dist. Muestral de la Media (TLC) <span class="tag">Muestral</span></h2>
+      <div class="form-group"><label>Media poblacional (μ)</label><input type="number" id="dm-mu" value="100" step="any"></div>
+      <div class="form-group"><label>Desviación estándar poblacional (σ)</label><input type="number" id="dm-sigma" value="15" min="0.001" step="any"></div>
+      <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="dm-n" value="36" min="1" step="1"></div>
+      <div class="form-group"><label>Media muestral observada (x̄)</label><input type="number" id="dm-xbar" value="105" step="any"></div>
+      <div class="form-group"><label>Percentil q (0-1)</label><input type="number" id="dm-q" value="0.95" min="0.001" max="0.999" step="any"></div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="dm-finita" style="width:auto">
+        <label style="margin:0;text-transform:none;font-size:.9rem;font-weight:500">Población finita</label>
+      </div>
+      <div id="dm-N-wrap" class="form-group" style="display:none">
+        <label>Tamaño de población (N)</label>
+        <input type="number" id="dm-N" value="500" min="2" step="1">
+      </div>
+      <button class="btn" onclick="calcMedia()">Calcular</button>
+      <div id="dm-warn" class="warning" style="display:none"></div>
+      <div class="results" id="dm-results" style="display:none">
+        <h3>Resultados</h3>
+        <div class="result-row"><span class="result-label">Error estándar σ_x̄</span><span class="result-value" id="dm-se"></span></div>
+        <div class="result-row"><span class="result-label">z = (x̄ - μ) / σ_x̄</span><span class="result-value" id="dm-z"></span></div>
+        <div class="result-row"><span class="result-label">P(X̄ ≤ x̄)</span><span class="result-value highlight" id="dm-cdf"></span></div>
+        <div class="result-row"><span class="result-label">P(X̄ > x̄)</span><span class="result-value green" id="dm-sf"></span></div>
+        <div class="result-row"><span class="result-label">Valor crítico para percentil q</span><span class="result-value orange" id="dm-ppf"></span></div>
+      </div>
+    </div>
+    <div class="card"><h2>Gráfica</h2><div class="chart-wrap"><canvas id="dm-chart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== INTERVALOS DE CONFIANZA ===== -->
+<div id="tab-ic" class="tab-content">
+  <div class="grid">
+   <div class="card">
+    <h2>📦 Intervalos de Confianza</h2>
+
+    <label style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Parámetro a estimar</label>
+    <div class="ic-selector" style="margin-bottom:14px">
+      <button class="ic-btn active" id="ic-btn1" onclick="setICType(1)">μ (σ conocida)</button>
+      <button class="ic-btn" id="ic-btn2" onclick="setICType(2)">μ (σ desconocida)</button>
+      <button class="ic-btn" id="ic-btn3" onclick="setICType(3)">Proporción p</button>
+    </div>
+
+    <label style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Tipo de intervalo</label>
+    <div class="ic-selector" style="margin-bottom:16px">
+      <button class="ic-btn active" id="ic-tail-btn1" onclick="setICTail(1)">⬛ Bilateral</button>
+      <button class="ic-btn" id="ic-tail-btn2" onclick="setICTail(2)">▶ Cola superior</button>
+      <button class="ic-btn" id="ic-tail-btn3" onclick="setICTail(3)">◀ Cola inferior</button>
+    </div>
+
+    <div id="ic-tail-desc" style="font-size:.82rem;color:var(--muted);background:#f8faff;border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:14px"></div>
+
+    <div class="form-group"><label>Nivel de confianza (ej: 0.95)</label><input type="number" id="ic-conf" value="0.95" min="0.5" max="0.999" step="any"></div>
+
+    <!-- tipo 1 -->
+    <div id="ic-t1">
+      <div class="form-group"><label>Media muestral (x̄)</label><input type="number" id="ic1-xbar" value="51800" step="any"></div>
+      <div class="form-group"><label>Desviación estándar poblacional (σ)</label><input type="number" id="ic1-sigma" value="4000" min="0.001" step="any"></div>
+      <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="ic1-n" value="30" min="1" step="1"></div>
+    </div>
+    <!-- tipo 2 -->
+    <div id="ic-t2" style="display:none">
+      <div class="form-group"><label>Media muestral (x̄)</label><input type="number" id="ic2-xbar" value="51800" step="any"></div>
+      <div class="form-group"><label>Desviación estándar muestral (s)</label><input type="number" id="ic2-s" value="4200" min="0.001" step="any"></div>
+      <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="ic2-n" value="30" min="1" step="1"></div>
+    </div>
+    <!-- tipo 3 -->
+    <div id="ic-t3" style="display:none">
+      <div class="form-group"><label>Número de éxitos (x)</label><input type="number" id="ic3-x" value="130" min="0" step="1"></div>
+      <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="ic3-n" value="200" min="1" step="1"></div>
+    </div>
+
+    <div class="form-group" style="border-top:1px dashed var(--border);padding-top:14px;margin-top:4px">
+      <label>Valor de referencia μ₀ / p₀ (opcional — para Z observado)</label>
+      <input type="number" id="ic-ref" placeholder="ej: 50000 o 0.5" step="any">
+    </div>
+
+    <button class="btn" onclick="calcIC()">Calcular</button>
+    <div id="ic-warn" class="warning" style="display:none"></div>
+    <div class="results" id="ic-results" style="display:none">
+      <h3>Resultados</h3>
+      <div class="result-row"><span class="result-label" id="ic-lbl-crit">Valor crítico</span><span class="result-value" id="ic-crit"></span></div>
+      <div class="result-row"><span class="result-label">Error estándar (SE)</span><span class="result-value" id="ic-se"></span></div>
+      <div class="result-row"><span class="result-label">Margen de error (E)</span><span class="result-value orange" id="ic-me"></span></div>
+      <div class="result-row" id="ic-row-inf"><span class="result-label" id="ic-lbl-inf">Límite inferior</span><span class="result-value highlight" id="ic-inf"></span></div>
+      <div class="result-row" id="ic-row-sup"><span class="result-label" id="ic-lbl-sup">Límite superior</span><span class="result-value highlight" id="ic-sup"></span></div>
+      <div class="result-row" id="ic-row-zobs" style="display:none">
+        <span class="result-label" id="ic-lbl-zobs">Z observado (μ₀)</span>
+        <span class="result-value purple" id="ic-zobs"></span>
+      </div>
+      <div id="ic-zobs-verdict" style="display:none;font-size:.83rem;padding:6px 10px;border-radius:6px;margin-top:4px;font-weight:600"></div>
+      <div class="result-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+        <span class="result-label">Interpretación</span>
+        <span id="ic-interp" style="font-size:.88rem;color:#374151;line-height:1.5"></span>
+      </div>
+    </div>
+   </div>
+   <div class="card">
+    <h2>Gráfica</h2>
+    <div class="chart-wrap"><canvas id="ic-chart"></canvas></div>
+   </div>
+  </div>
+</div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmt = (v, d=6) => typeof v === 'number' && isFinite(v) ? v.toFixed(d) : '—';
+const fmt4 = v => fmt(v, 4);
+const fmt2 = v => fmt(v, 2);
+let charts = {};
+
+function linspace(a, b, n) {
+  const step = (b - a) / (n - 1);
+  return Array.from({length: n}, (_, i) => a + i * step);
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function makeLineChart(id, labels, datasets, xLabel='x', yLabel='Densidad') {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 14, font: { size: 11 } } }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(5)}` } } },
+      scales: {
+        x: { title: { display: true, text: xLabel }, ticks: { maxTicksLimit: 8, callback: (_, i, arr) => i % Math.ceil(arr.length / 8) === 0 ? parseFloat(labels[i]).toFixed(2) : '' } },
+        y: { title: { display: true, text: yLabel }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function makeBarChart(id, labels, data, colors, xLabel='k', yLabel='Probabilidad') {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: '#334155', borderWidth: 1 }] },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` P = ${ctx.parsed.y.toFixed(5)}` } } },
+      scales: {
+        x: { title: { display: true, text: xLabel } },
+        y: { title: { display: true, text: yLabel }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function showResults(id) { document.getElementById(id).style.display = 'block'; }
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Normal ───────────────────────────────────────────────────────────────────
+function calcNormal() {
+  const mu = parseFloat(document.getElementById('n-mu').value);
+  const sigma = parseFloat(document.getElementById('n-sigma').value);
+  const x = parseFloat(document.getElementById('n-x').value);
+  const p = parseFloat(document.getElementById('n-p').value);
+  if (sigma <= 0 || p <= 0 || p >= 1) return;
+
+  const pdf = jStat.normal.pdf(x, mu, sigma);
+  const cdf = jStat.normal.cdf(x, mu, sigma);
+  const sf = 1 - cdf;
+  const ppf = jStat.normal.inv(p, mu, sigma);
+  const isf = jStat.normal.inv(1 - p, mu, sigma);
+  const halfZ = jStat.normal.inv((1 + p) / 2, 0, 1);
+  const E = halfZ * sigma;
+
+  document.getElementById('n-pdf').textContent = fmt(pdf);
+  document.getElementById('n-cdf').textContent = fmt(cdf);
+  document.getElementById('n-sf').textContent = fmt(sf);
+  document.getElementById('n-ppf').textContent = fmt4(ppf);
+  document.getElementById('n-isf').textContent = fmt4(isf);
+  document.getElementById('n-sym').textContent = `E = ±${fmt4(E)}  →  [${fmt4(mu - E)}, ${fmt4(mu + E)}]`;
+  showResults('n-results');
+
+  const xs = linspace(mu - 4*sigma, mu + 4*sigma, 200);
+  const ys = xs.map(v => jStat.normal.pdf(v, mu, sigma));
+  const fill = xs.map(v => v <= x ? jStat.normal.pdf(v, mu, sigma) : 0);
+  const labels = xs.map(v => v.toFixed(3));
+
+  makeLineChart('n-chart', labels, [
+    { label: 'PDF', data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(X≤${x})`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 },
+    { label: `Percentil ${p}`, data: xs.map(v => Math.abs(v - ppf) < (xs[1]-xs[0])*1.5 ? jStat.normal.pdf(v, mu, sigma) : null), borderColor: '#27ae60', borderWidth: 2, borderDash: [5,5], pointRadius: 0, spanGaps: false }
+  ]);
+}
+
+// ── T-Student ─────────────────────────────────────────────────────────────────
+function calcT() {
+  const df = parseFloat(document.getElementById('t-df').value);
+  const t = parseFloat(document.getElementById('t-val').value);
+  const alpha = parseFloat(document.getElementById('t-alpha').value);
+  const pInv = parseFloat(document.getElementById('t-p-inv').value);
+
+  const cdf = jStat.studentt.cdf(t, df);
+  const sf = 1 - cdf;
+  const bilateral = 2 * (1 - jStat.studentt.cdf(Math.abs(t), df));
+  const tcbi = jStat.studentt.inv(1 - alpha/2, df);
+  const tcuni = jStat.studentt.inv(1 - alpha, df);
+  const tPpf = jStat.studentt.inv(pInv, df);
+  const tIsf = jStat.studentt.inv(1 - pInv, df);
+  const tBiInv = jStat.studentt.inv(1 - pInv / 2, df);
+
+  document.getElementById('t-cdf').textContent = fmt(cdf);
+  document.getElementById('t-sf').textContent = fmt(sf);
+  document.getElementById('t-bilateral').textContent = fmt(bilateral);
+  document.getElementById('t-crit-bi').textContent = `±${fmt4(tcbi)}`;
+  document.getElementById('t-crit-uni').textContent = fmt4(tcuni);
+  document.getElementById('t-ppf').textContent = fmt4(tPpf);
+  document.getElementById('t-inv-sf').textContent = fmt4(tIsf);
+  document.getElementById('t-inv-bi').textContent = `±${fmt4(tBiInv)}`;
+  showResults('t-results');
+
+  const xs = linspace(-5, 5, 200);
+  const yt = xs.map(v => jStat.studentt.pdf(v, df));
+  const yn = xs.map(v => jStat.normal.pdf(v, 0, 1));
+  const fill = xs.map(v => v >= tcbi || v <= -tcbi ? jStat.studentt.pdf(v, df) : 0);
+  const labels = xs.map(v => v.toFixed(2));
+
+  makeLineChart('t-chart', labels, [
+    { label: `t(df=${df})`, data: yt, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: 'N(0,1)', data: yn, borderColor: '#27ae60', borderWidth: 1.5, borderDash: [4,4], fill: false, pointRadius: 0 },
+    { label: `Región α=${alpha}`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ], 't');
+}
+
+// ── Chi² ─────────────────────────────────────────────────────────────────────
+function calcChi2() {
+  const df = parseFloat(document.getElementById('c-df').value);
+  const v = parseFloat(document.getElementById('c-val').value);
+  const alpha = parseFloat(document.getElementById('c-alpha').value);
+
+  const pInvC = parseFloat(document.getElementById('c-p-inv').value);
+  const cdf = jStat.chisquare.cdf(v, df);
+  const sf = 1 - cdf;
+  const csup = jStat.chisquare.inv(1 - alpha, df);
+  const cinf = jStat.chisquare.inv(alpha, df);
+  const cPpf = jStat.chisquare.inv(pInvC, df);
+  const cIsf = jStat.chisquare.inv(1 - pInvC, df);
+
+  document.getElementById('c-cdf').textContent = fmt(cdf);
+  document.getElementById('c-sf').textContent = fmt(sf);
+  document.getElementById('c-crit-sup').textContent = fmt4(csup);
+  document.getElementById('c-crit-inf').textContent = fmt4(cinf);
+  document.getElementById('c-ppf').textContent = fmt4(cPpf);
+  document.getElementById('c-inv-sf').textContent = fmt4(cIsf);
+  showResults('c-results');
+
+  const end = df + 4*Math.sqrt(2*df);
+  const xs = linspace(0.01, Math.max(end, v*1.2), 200);
+  const ys = xs.map(v2 => jStat.chisquare.pdf(v2, df));
+  const fill = xs.map(v2 => v2 >= csup ? jStat.chisquare.pdf(v2, df) : 0);
+  const labels = xs.map(v2 => v2.toFixed(2));
+
+  makeLineChart('c-chart', labels, [
+    { label: `χ²(df=${df})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `Región α`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ], 'χ²');
+}
+
+// ── F ────────────────────────────────────────────────────────────────────────
+function calcF() {
+  const df1 = parseFloat(document.getElementById('f-df1').value);
+  const df2 = parseFloat(document.getElementById('f-df2').value);
+  const v = parseFloat(document.getElementById('f-val').value);
+  const alpha = parseFloat(document.getElementById('f-alpha').value);
+
+  const pInvF = parseFloat(document.getElementById('f-p-inv').value);
+  const cdf = jStat.centralF.cdf(v, df1, df2);
+  const sf = 1 - cdf;
+  const fc = jStat.centralF.inv(1 - alpha, df1, df2);
+  const fPpf = jStat.centralF.inv(pInvF, df1, df2);
+  const fIsf = jStat.centralF.inv(1 - pInvF, df1, df2);
+
+  document.getElementById('f-cdf').textContent = fmt(cdf);
+  document.getElementById('f-sf').textContent = fmt(sf);
+  document.getElementById('f-crit').textContent = fmt4(fc);
+  document.getElementById('f-ppf').textContent = fmt4(fPpf);
+  document.getElementById('f-inv-sf').textContent = isFinite(fIsf) ? fmt4(fIsf) : '0.0000';
+  showResults('f-results');
+
+  const xs = linspace(0.01, Math.max(6, v*1.3, fc*1.3), 200);
+  const ys = xs.map(v2 => { const p = jStat.centralF.pdf(v2, df1, df2); return isFinite(p) ? p : 0; });
+  const fill = xs.map(v2 => v2 >= fc ? (isFinite(jStat.centralF.pdf(v2, df1, df2)) ? jStat.centralF.pdf(v2, df1, df2) : 0) : 0);
+  const labels = xs.map(v2 => v2.toFixed(2));
+
+  makeLineChart('f-chart', labels, [
+    { label: `F(${df1},${df2})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `Región α`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ], 'F');
+}
+
+// ── Exponencial ───────────────────────────────────────────────────────────────
+function calcExpon() {
+  const lambda = parseFloat(document.getElementById('e-lambda').value);
+  const x = parseFloat(document.getElementById('e-x').value);
+  const p = parseFloat(document.getElementById('e-p').value);
+  const scale = 1 / lambda;
+
+  const cdf = 1 - Math.exp(-lambda * x);
+  const sf = Math.exp(-lambda * x);
+  const mean = scale;
+  const variance = scale * scale;
+  const ppf = -Math.log(1 - p) / lambda;
+  const isf = -Math.log(p) / lambda;
+
+  document.getElementById('e-cdf').textContent = fmt(cdf);
+  document.getElementById('e-sf').textContent = fmt(sf);
+  document.getElementById('e-mean').textContent = fmt4(mean);
+  document.getElementById('e-var').textContent = fmt4(variance);
+  document.getElementById('e-ppf').textContent = fmt4(ppf);
+  document.getElementById('e-isf').textContent = fmt4(isf);
+  showResults('e-results');
+
+  const xs = linspace(0, 10 * scale, 200);
+  const ys = xs.map(v => lambda * Math.exp(-lambda * v));
+  const fill = xs.map(v => v <= x ? lambda * Math.exp(-lambda * v) : 0);
+  const labels = xs.map(v => v.toFixed(3));
+
+  makeLineChart('e-chart', labels, [
+    { label: `Exp(λ=${lambda})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(X≤${x})`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ]);
+}
+
+// ── Poisson ───────────────────────────────────────────────────────────────────
+function poissonPMF(k, mu) {
+  if (k < 0 || !Number.isInteger(k)) return 0;
+  let logp = k * Math.log(mu) - mu;
+  for (let i = 1; i <= k; i++) logp -= Math.log(i);
+  return Math.exp(logp);
+}
+function poissonCDF(k, mu) {
+  let sum = 0;
+  for (let i = 0; i <= k; i++) sum += poissonPMF(i, mu);
+  return sum;
+}
+
+function calcPoisson() {
+  const mu = parseFloat(document.getElementById('po-lambda').value);
+  const k = parseInt(document.getElementById('po-k').value);
+  const p = parseFloat(document.getElementById('po-p').value);
+
+  const pmf = poissonPMF(k, mu);
+  const cdf = poissonCDF(k, mu);
+  const sf = 1 - cdf;
+  let ppf = 0;
+  while (poissonCDF(ppf, mu) < p) ppf++;
+
+  document.getElementById('po-pmf').textContent = fmt(pmf);
+  document.getElementById('po-cdf').textContent = fmt(cdf);
+  document.getElementById('po-sf').textContent = fmt(sf);
+  document.getElementById('po-ppf').textContent = ppf;
+  showResults('po-results');
+
+  const kMax = Math.max(k + 5, Math.ceil(mu + 4 * Math.sqrt(mu)));
+  const ks = Array.from({length: kMax + 1}, (_, i) => i);
+  const probs = ks.map(v => poissonPMF(v, mu));
+  const colors = ks.map(v => v === k ? '#e74c3c' : v === ppf ? '#27ae60' : '#93c5fd');
+
+  makeBarChart('po-chart', ks.map(String), probs, colors);
+
+  const tbody = document.querySelector('#po-table tbody');
+  tbody.innerHTML = '';
+  let cumul = 0;
+  ks.forEach(ki => {
+    const pm = poissonPMF(ki, mu);
+    cumul += pm;
+    const tr = document.createElement('tr');
+    if (ki === k) tr.style.background = '#fee2e2';
+    tr.innerHTML = `<td>${ki}</td><td>${pm.toFixed(6)}</td><td>${cumul.toFixed(6)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Binomial ──────────────────────────────────────────────────────────────────
+function calcBinom() {
+  const n = parseInt(document.getElementById('b-n').value);
+  const p = parseFloat(document.getElementById('b-p').value);
+  const k = parseInt(document.getElementById('b-k').value);
+  const q = parseFloat(document.getElementById('b-q').value);
+
+  const pmf = jStat.binomial.pdf(k, n, p);
+  const cdf = jStat.binomial.cdf(k, n, p);
+  const sf = 1 - cdf;
+  const mean = n * p;
+  const std = Math.sqrt(n * p * (1 - p));
+  let ppf = 0;
+  while (jStat.binomial.cdf(ppf, n, p) < q && ppf < n) ppf++;
+
+  document.getElementById('b-pmf').textContent = fmt(pmf);
+  document.getElementById('b-cdf').textContent = fmt(cdf);
+  document.getElementById('b-sf').textContent = fmt(sf);
+  document.getElementById('b-mean').textContent = fmt4(mean);
+  document.getElementById('b-std').textContent = fmt4(std);
+  document.getElementById('b-ppf').textContent = ppf;
+  showResults('b-results');
+
+  const ks = Array.from({length: n + 1}, (_, i) => i);
+  const probs = ks.map(v => jStat.binomial.pdf(v, n, p));
+  const colors = ks.map(v => v === k ? '#e74c3c' : v === ppf ? '#27ae60' : Math.abs(v - mean) < 0.5 ? '#f39c12' : '#93c5fd');
+
+  makeBarChart('b-chart', ks.map(String), probs, colors);
+}
+
+// ── Uniforme ──────────────────────────────────────────────────────────────────
+function calcUniforme() {
+  const a = parseFloat(document.getElementById('u-a').value);
+  const b = parseFloat(document.getElementById('u-b').value);
+  const x = parseFloat(document.getElementById('u-x').value);
+  const p = parseFloat(document.getElementById('u-p').value);
+  if (b <= a) return;
+
+  const cdf = x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a);
+  const sf = 1 - cdf;
+  const mean = (a + b) / 2;
+  const variance = (b - a) ** 2 / 12;
+  const ppf = a + p * (b - a);
+  const isf = a + (1 - p) * (b - a);
+
+  document.getElementById('u-cdf').textContent = fmt(cdf);
+  document.getElementById('u-sf').textContent = fmt(sf);
+  document.getElementById('u-mean').textContent = fmt4(mean);
+  document.getElementById('u-var').textContent = fmt4(variance);
+  document.getElementById('u-ppf').textContent = fmt4(ppf);
+  document.getElementById('u-isf').textContent = fmt4(isf);
+  showResults('u-results');
+
+  const h = 1 / (b - a);
+  const xs = linspace(a - (b - a) * 0.15, b + (b - a) * 0.15, 200);
+  const ys = xs.map(v => (v >= a && v <= b) ? h : 0);
+  const fill = xs.map(v => (v >= a && v <= Math.min(x, b)) ? h : 0);
+  const labels = xs.map(v => v.toFixed(3));
+
+  makeLineChart('u-chart', labels, [
+    { label: `U[${a}, ${b}]`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0, stepped: true },
+    { label: `P(X≤${x})`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0, stepped: true }
+  ]);
+}
+
+// ── Dist. Proporción ─────────────────────────────────────────────────────────
+function calcProp() {
+  const p = parseFloat(document.getElementById('dp-p').value);
+  const n = parseInt(document.getElementById('dp-n').value);
+  const phat = parseFloat(document.getElementById('dp-phat').value);
+  const q = parseFloat(document.getElementById('dp-q').value);
+
+  const se = Math.sqrt(p * (1 - p) / n);
+  const z = (phat - p) / se;
+  const cdf = jStat.normal.cdf(phat, p, se);
+  const sf = 1 - cdf;
+  const ppf = jStat.normal.inv(q, p, se);
+
+  const warn = document.getElementById('dp-warn');
+  if (n * p < 5 || n * (1 - p) < 5) {
+    warn.style.display = 'block';
+    warn.textContent = '⚠ Advertencia: np < 5 o n(1-p) < 5. La aproximación normal puede no ser confiable.';
+  } else { warn.style.display = 'none'; }
+
+  document.getElementById('dp-se').textContent = fmt(se);
+  document.getElementById('dp-z').textContent = fmt4(z);
+  document.getElementById('dp-cdf').textContent = fmt(cdf);
+  document.getElementById('dp-sf').textContent = fmt(sf);
+  document.getElementById('dp-ppf').textContent = fmt4(ppf);
+  showResults('dp-results');
+
+  const rng = 4 * se;
+  const xs = linspace(p - rng, p + rng, 200);
+  const ys = xs.map(v => jStat.normal.pdf(v, p, se));
+  const fill = xs.map(v => v <= phat ? jStat.normal.pdf(v, p, se) : 0);
+  const labels = xs.map(v => v.toFixed(4));
+
+  makeLineChart('dp-chart', labels, [
+    { label: `p̂ ~ N(${p}, ${se.toFixed(4)})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(p̂≤${phat})`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ], 'p̂');
+}
+
+// ── Dist. Media TLC ───────────────────────────────────────────────────────────
+document.getElementById('dm-finita').addEventListener('change', function() {
+  document.getElementById('dm-N-wrap').style.display = this.checked ? 'block' : 'none';
+});
+
+function calcMedia() {
+  const mu = parseFloat(document.getElementById('dm-mu').value);
+  const sigma = parseFloat(document.getElementById('dm-sigma').value);
+  const n = parseInt(document.getElementById('dm-n').value);
+  const xbar = parseFloat(document.getElementById('dm-xbar').value);
+  const q = parseFloat(document.getElementById('dm-q').value);
+  const finita = document.getElementById('dm-finita').checked;
+
+  let se = sigma / Math.sqrt(n);
+  if (finita) {
+    const N = parseInt(document.getElementById('dm-N').value);
+    se *= Math.sqrt((N - n) / (N - 1));
+  }
+
+  const z = (xbar - mu) / se;
+  const cdf = jStat.normal.cdf(xbar, mu, se);
+  const sf = 1 - cdf;
+  const ppf = jStat.normal.inv(q, mu, se);
+
+  const warn = document.getElementById('dm-warn');
+  if (n < 30) {
+    warn.style.display = 'block';
+    warn.textContent = `⚠ n = ${n} < 30: el TLC puede no garantizar normalidad de x̄ a menos que la población sea normal.`;
+  } else { warn.style.display = 'none'; }
+
+  document.getElementById('dm-se').textContent = fmt(se);
+  document.getElementById('dm-z').textContent = fmt4(z);
+  document.getElementById('dm-cdf').textContent = fmt(cdf);
+  document.getElementById('dm-sf').textContent = fmt(sf);
+  document.getElementById('dm-ppf').textContent = fmt4(ppf);
+  showResults('dm-results');
+
+  const rng = 4 * se;
+  const xs = linspace(mu - rng, mu + rng, 200);
+  const ys = xs.map(v => jStat.normal.pdf(v, mu, se));
+  const fill = xs.map(v => v <= xbar ? jStat.normal.pdf(v, mu, se) : 0);
+  const labels = xs.map(v => v.toFixed(2));
+
+  makeLineChart('dm-chart', labels, [
+    { label: `x̄ ~ N(${mu}, ${se.toFixed(3)})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(X̄≤${xbar})`, data: fill, borderColor: 'transparent', backgroundColor: 'rgba(231,76,60,.25)', fill: true, pointRadius: 0 }
+  ], 'x̄');
+}
+
+// ── Intervalos de Confianza ───────────────────────────────────────────────────
+let icType = 1;
+let icTail = 1; // 1=bilateral, 2=cola superior, 3=cola inferior
+
+const IC_TAIL_DESC = {
+  1: '⬛ <strong>Bilateral:</strong> estima el parámetro entre dos límites. Usa z_(α/2) o t_(α/2). IC = [x̄ − E , x̄ + E]',
+  2: '▶ <strong>Cola superior</strong> (unilateral derecha): el parámetro puede ser cualquier valor <em>mayor</em> que el límite inferior. Usa z_α o t_α. IC = [x̄ − E , +∞)',
+  3: '◀ <strong>Cola inferior</strong> (unilateral izquierda): el parámetro puede ser cualquier valor <em>menor</em> que el límite superior. Usa z_α o t_α. IC = (−∞ , x̄ + E]'
+};
+
+function setICType(t) {
+  icType = t;
+  [1,2,3].forEach(i => {
+    document.getElementById(`ic-t${i}`).style.display = i === t ? 'block' : 'none';
+    document.getElementById(`ic-btn${i}`).classList.toggle('active', i === t);
+  });
+}
+
+function setICTail(t) {
+  icTail = t;
+  [1,2,3].forEach(i => document.getElementById(`ic-tail-btn${i}`).classList.toggle('active', i === t));
+  document.getElementById('ic-tail-desc').innerHTML = IC_TAIL_DESC[t];
+}
+
+function getICParams(alpha) {
+  // Devuelve { crit, se, center, paramLabel, chartXLabel, phat? }
+  if (icType === 1) {
+    const xbar = parseFloat(document.getElementById('ic1-xbar').value);
+    const sigma = parseFloat(document.getElementById('ic1-sigma').value);
+    const n = parseInt(document.getElementById('ic1-n').value);
+    const critFn = icTail === 1
+      ? jStat.normal.inv(1 - alpha/2, 0, 1)
+      : jStat.normal.inv(1 - alpha, 0, 1);
+    return { crit: critFn, se: sigma / Math.sqrt(n), center: xbar, paramLabel: 'μ', chartXLabel: 'x̄',
+             critLabel: icTail === 1 ? `z_(α/2) = z_(${(alpha/2).toFixed(3)})` : `z_α = z_(${alpha.toFixed(3)})` };
+  } else if (icType === 2) {
+    const xbar = parseFloat(document.getElementById('ic2-xbar').value);
+    const s = parseFloat(document.getElementById('ic2-s').value);
+    const n = parseInt(document.getElementById('ic2-n').value);
+    const gl = n - 1;
+    const critFn = icTail === 1
+      ? jStat.studentt.inv(1 - alpha/2, gl)
+      : jStat.studentt.inv(1 - alpha, gl);
+    return { crit: critFn, se: s / Math.sqrt(n), center: xbar, paramLabel: 'μ', chartXLabel: 'x̄',
+             critLabel: icTail === 1 ? `t_(α/2, gl=${gl})` : `t_(α, gl=${gl})` };
+  } else {
+    const x = parseInt(document.getElementById('ic3-x').value);
+    const n = parseInt(document.getElementById('ic3-n').value);
+    const phat = x / n;
+    const critFn = icTail === 1
+      ? jStat.normal.inv(1 - alpha/2, 0, 1)
+      : jStat.normal.inv(1 - alpha, 0, 1);
+    return { crit: critFn, se: Math.sqrt(phat * (1 - phat) / n), center: phat, paramLabel: 'p', chartXLabel: 'p̂',
+             critLabel: icTail === 1 ? 'z_(α/2)' : 'z_α', phat };
+  }
+}
+
+function calcIC() {
+  const conf = parseFloat(document.getElementById('ic-conf').value);
+  const alpha = 1 - conf;
+  const warn = document.getElementById('ic-warn');
+  warn.style.display = 'none';
+
+  const p = getICParams(alpha);
+  const { crit, se, center, paramLabel, chartXLabel, critLabel } = p;
+  const me = crit * se;
+
+  // Verificar condición proporción
+  if (icType === 3 && p.phat !== undefined) {
+    const n = parseInt(document.getElementById('ic3-n').value);
+    if (n * p.phat < 5 || n * (1 - p.phat) < 5)  {
+      warn.style.display = 'block';
+      warn.textContent = '⚠ np̂ < 5 o n(1-p̂) < 5. La aproximación normal puede no ser confiable.';
+    }
+  }
+
+  let icInf, icSup, interpText, lblInf, lblSup;
+  const pct = `${(conf*100).toFixed(0)}%`;
+
+  if (icTail === 1) {
+    icInf = icType === 3 ? Math.max(0, center - me) : center - me;
+    icSup = icType === 3 ? Math.min(1, center + me) : center + me;
+    lblInf = 'Límite inferior'; lblSup = 'Límite superior';
+    interpText = `Con ${pct} de confianza, ${paramLabel} ∈ [${fmt4(icInf)}, ${fmt4(icSup)}].`;
+  } else if (icTail === 2) {
+    icInf = icType === 3 ? Math.max(0, center - me) : center - me;
+    icSup = null;
+    lblInf = 'Límite inferior (cota)'; lblSup = 'Límite superior';
+    interpText = `Con ${pct} de confianza, ${paramLabel} ≥ ${fmt4(icInf)}  (IC = [${fmt4(icInf)}, +∞)).`;
+  } else {
+    icInf = null;
+    icSup = icType === 3 ? Math.min(1, center + me) : center + me;
+    lblInf = 'Límite inferior'; lblSup = 'Límite superior (cota)';
+    interpText = `Con ${pct} de confianza, ${paramLabel} ≤ ${fmt4(icSup)}  (IC = (−∞, ${fmt4(icSup)}]).`;
+  }
+
+  document.getElementById('ic-lbl-crit').textContent = critLabel;
+  document.getElementById('ic-crit').textContent = fmt4(crit);
+  document.getElementById('ic-se').textContent = fmt(se);
+  document.getElementById('ic-me').textContent = fmt4(me);
+  document.getElementById('ic-lbl-inf').textContent = lblInf;
+  document.getElementById('ic-lbl-sup').textContent = lblSup;
+  document.getElementById('ic-inf').textContent = icInf !== null ? fmt4(icInf) : '−∞';
+  document.getElementById('ic-sup').textContent = icSup !== null ? fmt4(icSup) : '+∞';
+  document.getElementById('ic-row-inf').style.opacity = icTail === 3 ? '.45' : '1';
+  document.getElementById('ic-row-sup').style.opacity = icTail === 2 ? '.45' : '1';
+  document.getElementById('ic-interp').textContent = interpText;
+
+  // Z observado (solo si el usuario ingresó valor de referencia)
+  const refRaw = document.getElementById('ic-ref').value.trim();
+  const rowZ = document.getElementById('ic-row-zobs');
+  const verdict = document.getElementById('ic-zobs-verdict');
+  if (refRaw !== '') {
+    const ref = parseFloat(refRaw);
+    const zObs = (center - ref) / se;
+    const statLabel = icType === 2 ? 't' : 'Z';
+    document.getElementById('ic-lbl-zobs').textContent =
+      `${statLabel} observado = (estimador − ${ref}) / SE`;
+    document.getElementById('ic-zobs').textContent = fmt4(zObs);
+    rowZ.style.display = 'flex';
+
+    // Veredicto: ¿está μ₀ dentro del IC?
+    let inside;
+    if (icTail === 1) inside = (icInf <= ref && ref <= icSup);
+    else if (icTail === 2) inside = ref >= icInf;
+    else inside = ref <= icSup;
+
+    verdict.style.display = 'block';
+    if (inside) {
+      verdict.style.background = '#dcfce7'; verdict.style.color = '#15803d';
+      verdict.textContent = `✓ El valor de referencia ${ref} está DENTRO del IC → no se rechaza H₀ al nivel ${((1-conf)*100).toFixed(0)}%.`;
+    } else {
+      verdict.style.background = '#fee2e2'; verdict.style.color = '#b91c1c';
+      verdict.textContent = `✗ El valor de referencia ${ref} está FUERA del IC → se rechaza H₀ al nivel ${((1-conf)*100).toFixed(0)}%.`;
+    }
+  } else {
+    rowZ.style.display = 'none';
+    verdict.style.display = 'none';
+  }
+
+  showResults('ic-results');
+
+  // Gráfica
+  const rng = 4 * se;
+  const xMin = center - rng, xMax = center + rng;
+  const xs = linspace(xMin, xMax, 300);
+  const ys = xs.map(v => jStat.normal.pdf(v, center, se));
+
+  let fillIC;
+  if (icTail === 1) {
+    fillIC = xs.map(v => (v >= icInf && v <= icSup) ? jStat.normal.pdf(v, center, se) : 0);
+  } else if (icTail === 2) {
+    fillIC = xs.map(v => v >= icInf ? jStat.normal.pdf(v, center, se) : 0);
+  } else {
+    fillIC = xs.map(v => v <= icSup ? jStat.normal.pdf(v, center, se) : 0);
+  }
+
+  const tailNames = { 1: 'Bilateral', 2: 'Cola superior', 3: 'Cola inferior' };
+  const labels = xs.map(v => v.toFixed(4));
+  const datasets = [
+    { label: 'Distribución muestral', data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `IC ${pct} — ${tailNames[icTail]}`, data: fillIC, borderColor: 'transparent', backgroundColor: 'rgba(39,174,96,.3)', fill: true, pointRadius: 0 }
+  ];
+  // Marcar valor de referencia en la gráfica
+  if (refRaw !== '') {
+    const ref = parseFloat(refRaw);
+    const refLine = xs.map(v => Math.abs(v - ref) < (xs[1] - xs[0]) * 1.5 ? jStat.normal.pdf(v, center, se) : null);
+    datasets.push({ label: `Ref: ${ref}`, data: refLine, borderColor: '#e74c3c', borderWidth: 2.5, borderDash: [6,4], pointRadius: 0, spanGaps: false, fill: false });
+  }
+  makeLineChart('ic-chart', labels, datasets, chartXLabel);
+}
+
+// Inicializar descripción de cola al cargar
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ic-tail-desc').innerHTML = IC_TAIL_DESC[1];
+});
+
+// ── Funciones Solo-Inversa ────────────────────────────────────────────────────
+function showInvResults(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  // Borrar filas directas para no confundir
+  ['n-pdf','n-cdf','n-sf'].forEach(i => { const e = document.getElementById(i); if(e) e.textContent = '—'; });
+}
+
+function calcNormalInv() {
+  const mu = parseFloat(document.getElementById('n-mu').value);
+  const sigma = parseFloat(document.getElementById('n-sigma').value);
+  const p = parseFloat(document.getElementById('n-p').value);
+  if (sigma <= 0 || p <= 0 || p >= 1) return;
+  const ppf = jStat.normal.inv(p, mu, sigma);
+  const isf = jStat.normal.inv(1 - p, mu, sigma);
+  const E = jStat.normal.inv((1 + p) / 2, 0, 1) * sigma;
+  document.getElementById('n-pdf').textContent = '—';
+  document.getElementById('n-cdf').textContent = '—';
+  document.getElementById('n-sf').textContent = '—';
+  document.getElementById('n-ppf').textContent = fmt4(ppf);
+  document.getElementById('n-isf').textContent = fmt4(isf);
+  document.getElementById('n-sym').textContent = `E = ±${fmt4(E)}  →  [${fmt4(mu - E)}, ${fmt4(mu + E)}]`;
+  showResults('n-results');
+  // Gráfica centrada en las inversas
+  const xs = linspace(mu - 4*sigma, mu + 4*sigma, 200);
+  const ys = xs.map(v => jStat.normal.pdf(v, mu, sigma));
+  const fillPpf = xs.map(v => v <= ppf ? jStat.normal.pdf(v, mu, sigma) : 0);
+  const fillIsf = xs.map(v => v >= isf ? jStat.normal.pdf(v, mu, sigma) : 0);
+  makeLineChart('n-chart', xs.map(v => v.toFixed(3)), [
+    { label: 'PDF', data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(X≤x)=p: x=${fmt4(ppf)}`, data: fillPpf, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0 },
+    { label: `P(X>x)=p: x=${fmt4(isf)}`, data: fillIsf, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0 }
+  ]);
+}
+
+function calcTInv() {
+  const df = parseFloat(document.getElementById('t-df').value);
+  const pInv = parseFloat(document.getElementById('t-p-inv').value);
+  if (pInv <= 0 || pInv >= 1) return;
+  const tPpf = jStat.studentt.inv(pInv, df);
+  const tIsf = jStat.studentt.inv(1 - pInv, df);
+  const tBiInv = jStat.studentt.inv(1 - pInv / 2, df);
+  ['t-cdf','t-sf','t-bilateral','t-crit-bi','t-crit-uni'].forEach(i => { document.getElementById(i).textContent = '—'; });
+  document.getElementById('t-ppf').textContent = fmt4(tPpf);
+  document.getElementById('t-inv-sf').textContent = fmt4(tIsf);
+  document.getElementById('t-inv-bi').textContent = `±${fmt4(tBiInv)}`;
+  showResults('t-results');
+  const xs = linspace(-5, 5, 200);
+  const yt = xs.map(v => jStat.studentt.pdf(v, df));
+  const fillL = xs.map(v => v <= tPpf ? jStat.studentt.pdf(v, df) : 0);
+  const fillR = xs.map(v => v >= tIsf ? jStat.studentt.pdf(v, df) : 0);
+  makeLineChart('t-chart', xs.map(v => v.toFixed(2)), [
+    { label: `t(df=${df})`, data: yt, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(T≤t)=p: t=${fmt4(tPpf)}`, data: fillL, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0 },
+    { label: `P(T>t)=p: t=${fmt4(tIsf)}`, data: fillR, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0 }
+  ], 't');
+}
+
+function calcChi2Inv() {
+  const df = parseFloat(document.getElementById('c-df').value);
+  const pInvC = parseFloat(document.getElementById('c-p-inv').value);
+  if (pInvC <= 0 || pInvC >= 1) return;
+  const cPpf = jStat.chisquare.inv(pInvC, df);
+  const cIsf = jStat.chisquare.inv(1 - pInvC, df);
+  ['c-cdf','c-sf','c-crit-sup','c-crit-inf'].forEach(i => { document.getElementById(i).textContent = '—'; });
+  document.getElementById('c-ppf').textContent = fmt4(cPpf);
+  document.getElementById('c-inv-sf').textContent = fmt4(cIsf);
+  showResults('c-results');
+  const end = df + 4*Math.sqrt(2*df);
+  const xs = linspace(0.01, Math.max(end, cPpf * 1.2), 200);
+  const ys = xs.map(v => jStat.chisquare.pdf(v, df));
+  const fillL = xs.map(v => v <= cPpf ? jStat.chisquare.pdf(v, df) : 0);
+  const fillR = xs.map(v => v >= cIsf ? jStat.chisquare.pdf(v, df) : 0);
+  makeLineChart('c-chart', xs.map(v => v.toFixed(2)), [
+    { label: `χ²(df=${df})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(χ²≤x)=p: x=${fmt4(cPpf)}`, data: fillL, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0 },
+    { label: `P(χ²>x)=p: x=${fmt4(cIsf)}`, data: fillR, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0 }
+  ], 'χ²');
+}
+
+function calcFInv() {
+  const df1 = parseFloat(document.getElementById('f-df1').value);
+  const df2 = parseFloat(document.getElementById('f-df2').value);
+  const pInvF = parseFloat(document.getElementById('f-p-inv').value);
+  if (pInvF <= 0 || pInvF >= 1) return;
+  const fPpf = jStat.centralF.inv(pInvF, df1, df2);
+  const fIsf = jStat.centralF.inv(1 - pInvF, df1, df2);
+  ['f-cdf','f-sf','f-crit'].forEach(i => { document.getElementById(i).textContent = '—'; });
+  document.getElementById('f-ppf').textContent = fmt4(fPpf);
+  document.getElementById('f-inv-sf').textContent = isFinite(fIsf) ? fmt4(fIsf) : '0.0000';
+  showResults('f-results');
+  const xEnd = Math.max(6, fPpf * 1.3);
+  const xs = linspace(0.01, xEnd, 200);
+  const ys = xs.map(v => { const d = jStat.centralF.pdf(v, df1, df2); return isFinite(d) ? d : 0; });
+  const fillL = xs.map((v, i) => v <= fPpf ? ys[i] : 0);
+  const fillR = xs.map((v, i) => v >= fIsf ? ys[i] : 0);
+  makeLineChart('f-chart', xs.map(v => v.toFixed(2)), [
+    { label: `F(${df1},${df2})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(F≤x)=p: x=${fmt4(fPpf)}`, data: fillL, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0 },
+    { label: `P(F>x)=p: x=${fmt4(fIsf)}`, data: fillR, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0 }
+  ], 'F');
+}
+
+function calcExponInv() {
+  const lambda = parseFloat(document.getElementById('e-lambda').value);
+  const p = parseFloat(document.getElementById('e-p').value);
+  if (lambda <= 0 || p <= 0 || p >= 1) return;
+  const ppf = -Math.log(1 - p) / lambda;
+  const isf = -Math.log(p) / lambda;
+  ['e-cdf','e-sf'].forEach(i => { document.getElementById(i).textContent = '—'; });
+  document.getElementById('e-mean').textContent = fmt4(1 / lambda);
+  document.getElementById('e-var').textContent = fmt4(1 / (lambda * lambda));
+  document.getElementById('e-ppf').textContent = fmt4(ppf);
+  document.getElementById('e-isf').textContent = fmt4(isf);
+  showResults('e-results');
+  const scale = 1 / lambda;
+  const xs = linspace(0, 10 * scale, 200);
+  const ys = xs.map(v => lambda * Math.exp(-lambda * v));
+  const fillL = xs.map(v => v <= ppf ? lambda * Math.exp(-lambda * v) : 0);
+  const fillR = xs.map(v => v >= isf ? lambda * Math.exp(-lambda * v) : 0);
+  makeLineChart('e-chart', xs.map(v => v.toFixed(3)), [
+    { label: `Exp(λ=${lambda})`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0 },
+    { label: `P(X≤x)=p: x=${fmt4(ppf)}`, data: fillL, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0 },
+    { label: `P(X>x)=p: x=${fmt4(isf)}`, data: fillR, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0 }
+  ]);
+}
+
+function calcUniformeInv() {
+  const a = parseFloat(document.getElementById('u-a').value);
+  const b = parseFloat(document.getElementById('u-b').value);
+  const p = parseFloat(document.getElementById('u-p').value);
+  if (b <= a || p <= 0 || p >= 1) return;
+  const ppf = a + p * (b - a);
+  const isf = a + (1 - p) * (b - a);
+  ['u-cdf','u-sf'].forEach(i => { document.getElementById(i).textContent = '—'; });
+  document.getElementById('u-mean').textContent = fmt4((a + b) / 2);
+  document.getElementById('u-var').textContent = fmt4((b - a) ** 2 / 12);
+  document.getElementById('u-ppf').textContent = fmt4(ppf);
+  document.getElementById('u-isf').textContent = fmt4(isf);
+  showResults('u-results');
+  const h = 1 / (b - a);
+  const xs = linspace(a - (b-a)*0.15, b + (b-a)*0.15, 200);
+  const ys = xs.map(v => (v >= a && v <= b) ? h : 0);
+  const fillL = xs.map(v => (v >= a && v <= ppf) ? h : 0);
+  const fillR = xs.map(v => (v >= isf && v <= b) ? h : 0);
+  makeLineChart('u-chart', xs.map(v => v.toFixed(3)), [
+    { label: `U[${a},${b}]`, data: ys, borderColor: '#1a56db', borderWidth: 2, fill: false, pointRadius: 0, stepped: true },
+    { label: `P(X≤x)=p: x=${fmt4(ppf)}`, data: fillL, borderColor: 'transparent', backgroundColor: 'rgba(243,156,18,.3)', fill: true, pointRadius: 0, stepped: true },
+    { label: `P(X>x)=p: x=${fmt4(isf)}`, data: fillR, borderColor: 'transparent', backgroundColor: 'rgba(142,68,173,.25)', fill: true, pointRadius: 0, stepped: true }
+  ]);
+}
+</script>
+</body>
+</html>
