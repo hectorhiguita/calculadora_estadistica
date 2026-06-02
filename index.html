@@ -573,9 +573,13 @@
       <div class="result-row"><span class="result-label">Margen de error (E)</span><span class="result-value orange" id="ic-me"></span></div>
       <div class="result-row" id="ic-row-inf"><span class="result-label" id="ic-lbl-inf">Límite inferior</span><span class="result-value highlight" id="ic-inf"></span></div>
       <div class="result-row" id="ic-row-sup"><span class="result-label" id="ic-lbl-sup">Límite superior</span><span class="result-value highlight" id="ic-sup"></span></div>
-      <div class="result-row" id="ic-row-zobs" style="display:none">
-        <span class="result-label" id="ic-lbl-zobs">Z observado (μ₀)</span>
+      <div class="result-row" id="ic-row-zobs">
+        <span class="result-label" id="ic-lbl-zobs">Z observado</span>
         <span class="result-value purple" id="ic-zobs"></span>
+      </div>
+      <div class="result-row" style="flex-direction:column;align-items:flex-start;gap:3px" id="ic-row-zobs-formula">
+        <span class="result-label" id="ic-lbl-zobs-formula">Fórmula</span>
+        <span id="ic-zobs-formula" style="font-size:.82rem;color:#374151;font-family:monospace;line-height:1.5"></span>
       </div>
       <div id="ic-zobs-verdict" style="display:none;font-size:.83rem;padding:6px 10px;border-radius:6px;margin-top:4px;font-weight:600"></div>
       <div class="result-row" style="flex-direction:column;align-items:flex-start;gap:4px">
@@ -1361,35 +1365,60 @@ function calcIC() {
   document.getElementById('ic-row-sup').style.opacity = icTail === 2 ? '.45' : '1';
   document.getElementById('ic-interp').textContent = interpText;
 
-  // Z observado (solo si el usuario ingresó valor de referencia)
-  const refRaw = document.getElementById('ic-ref').value.trim();
-  const rowZ = document.getElementById('ic-row-zobs');
+  // ── Estadístico observado ────────────────────────────────────────────────────
+  const refRaw  = document.getElementById('ic-ref').value.trim();
+  const hasRef  = refRaw !== '';
+  const refVal  = hasRef ? parseFloat(refRaw) : 0;
   const verdict = document.getElementById('ic-zobs-verdict');
-  if (refRaw !== '') {
-    const ref = parseFloat(refRaw);
-    const zObs = (center - ref) / se;
-    const statLabel = icType === 2 ? 't' : 'Z';
+
+  // Parámetros según tipo
+  const icStatLabel = (icType === 2 || icType === 5) ? 't' : 'Z';
+  const icNullLabels = {
+    1: hasRef ? `μ = ${refVal}`       : 'μ = 0',
+    2: hasRef ? `μ = ${refVal}`       : 'μ = 0',
+    3: hasRef ? `p = ${refVal}`       : null,          // tipo 3 solo con referencia
+    4: hasRef ? `μ₁−μ₂ = ${refVal}`  : 'μ₁ = μ₂',
+    5: hasRef ? `μ₁−μ₂ = ${refVal}`  : 'μ₁ = μ₂',
+    6: hasRef ? `p₁−p₂ = ${refVal}`  : 'p₁ = p₂'
+  };
+  const icParamLabels = { 1:'x̄', 2:'x̄', 3:'p̂', 4:'x̄₁−x̄₂', 5:'x̄₁−x̄₂', 6:'p̂₁−p̂₂' };
+
+  const nullLabel = icNullLabels[icType];
+  const rowZ      = document.getElementById('ic-row-zobs');
+  const rowZF     = document.getElementById('ic-row-zobs-formula');
+
+  if (nullLabel !== null) {
+    const zObs = (center - refVal) / se;
     document.getElementById('ic-lbl-zobs').textContent =
-      `${statLabel} observado = (estimador − ${ref}) / SE`;
+      `${icStatLabel} observado  [H₀: ${nullLabel}]`;
     document.getElementById('ic-zobs').textContent = fmt4(zObs);
-    rowZ.style.display = 'flex';
+    document.getElementById('ic-zobs-formula').textContent =
+      `${icStatLabel} = (${icParamLabels[icType]} − ${fmt4(refVal)}) / SE = (${fmt4(center)} − ${fmt4(refVal)}) / ${fmt(se)} = ${fmt4(zObs)}`;
+    rowZ.style.display  = 'flex';
+    rowZF.style.display = 'flex';
 
-    // Veredicto: ¿está μ₀ dentro del IC?
-    let inside;
-    if (icTail === 1) inside = (icInf <= ref && ref <= icSup);
-    else if (icTail === 2) inside = ref >= icInf;
-    else inside = ref <= icSup;
+    // Veredicto solo cuando el usuario ingresó explícitamente una referencia
+    if (hasRef) {
+      let inside;
+      if (icTail === 1) inside = icInf !== null && icSup !== null && (icInf <= refVal && refVal <= icSup);
+      else if (icTail === 2) inside = icInf !== null && refVal >= icInf;
+      else inside = icSup !== null && refVal <= icSup;
 
-    verdict.style.display = 'block';
-    if (inside) {
-      verdict.style.background = '#dcfce7'; verdict.style.color = '#15803d';
-      verdict.textContent = `✓ El valor de referencia ${ref} está DENTRO del IC → no se rechaza H₀ al nivel ${((1-conf)*100).toFixed(0)}%.`;
+      verdict.style.display = 'block';
+      if (inside) {
+        verdict.style.background = '#dcfce7'; verdict.style.color = '#15803d';
+        verdict.textContent = `✓ El valor de referencia (${refVal}) está DENTRO del IC → no se rechaza H₀ al ${((1-conf)*100).toFixed(0)}% de confianza.`;
+      } else {
+        verdict.style.background = '#fee2e2'; verdict.style.color = '#b91c1c';
+        verdict.textContent = `✗ El valor de referencia (${refVal}) está FUERA del IC → se rechaza H₀ al ${((1-conf)*100).toFixed(0)}% de confianza.`;
+      }
     } else {
-      verdict.style.background = '#fee2e2'; verdict.style.color = '#b91c1c';
-      verdict.textContent = `✗ El valor de referencia ${ref} está FUERA del IC → se rechaza H₀ al nivel ${((1-conf)*100).toFixed(0)}%.`;
+      verdict.style.display = 'none';
     }
   } else {
-    rowZ.style.display = 'none';
+    // tipo 3 sin referencia: ocultar
+    rowZ.style.display  = 'none';
+    rowZF.style.display = 'none';
     verdict.style.display = 'none';
   }
 
