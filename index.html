@@ -92,6 +92,12 @@
   .decision-keep { background:#dcfce7; color:#15803d; border:2px solid #86efac; }
   .hyp-display { background:#f8faff; border:1.5px solid #c7d7f9; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:.88rem; line-height:1.7; }
   .hyp-display strong { color:var(--primary); }
+
+  .formula-box { background:#f0f4ff; border:1.5px solid #c7d7f5; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-family:monospace; font-size:.81rem; line-height:1.85; color:#1e293b; }
+  .formula-box .fb-title { font-size:.7rem; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:.07em; margin-bottom:4px; display:block; }
+  .formula-box .fb-row { display:block; }
+  .formula-box .fb-sep { border:none; border-top:1px dashed #c7d7f5; margin:5px 0; }
+
 </style>
 </head>
 <body>
@@ -121,6 +127,13 @@
   <div class="grid">
     <div class="card">
       <h2>🔔 Distribución Normal <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">f(x) = (1 / (σ√(2π))) · e^(−(x−μ)² / (2σ²))</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: μ &nbsp;|&nbsp; Varianza: σ² &nbsp;|&nbsp; Desv. est.: σ</span>
+        <span class="fb-row">Estandarización: z = (x − μ) / σ</span>
+      </div>
       <div class="form-group"><label>Media (μ)</label><input type="number" id="n-mu" value="0" step="any"></div>
       <div class="form-group"><label>Desviación estándar (σ)</label><input type="number" id="n-sigma" value="1" min="0.0001" step="any"></div>
       <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="n-x" value="1.5" step="any"></div>
@@ -150,6 +163,13 @@
   <div class="grid">
     <div class="card">
       <h2>📐 T de Student <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">f(t) ∝ (1 + t²/ν)^(−(ν+1)/2) &nbsp;&nbsp; [ν = grados de libertad]</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: 0  (ν&gt;1) &nbsp;|&nbsp; Varianza: ν/(ν−2)  (ν&gt;2)</span>
+        <span class="fb-row">Converge a N(0,1) cuando ν→∞. Colas más pesadas que la Normal.</span>
+      </div>
       <div class="form-group"><label>Grados de libertad (df)</label><input type="number" id="t-df" value="10" min="1" step="1"></div>
       <div class="form-group"><label>Valor de t (para probabilidades directas)</label><input type="number" id="t-val" value="2.0" step="any"></div>
       <div class="form-group"><label>Nivel de significancia α (para valores críticos)</label><input type="number" id="t-alpha" value="0.05" min="0.001" max="0.5" step="any"></div>
@@ -180,6 +200,13 @@
   <div class="grid">
     <div class="card">
       <h2>χ² Chi Cuadrada <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">X² = Z₁² + Z₂² + ··· + Zₖ²   (suma de k normales estándar al cuadrado)</span>
+        <span class="fb-row">f(x) = x^(k/2−1)·e^(−x/2) / (2^(k/2)·Γ(k/2)) &nbsp; x ≥ 0</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: k &nbsp;|&nbsp; Varianza: 2k &nbsp;|&nbsp; Solo valores ≥ 0. Asimétrica derecha.</span>
+      </div>
       <div class="form-group"><label>Grados de libertad (df)</label><input type="number" id="c-df" value="5" min="1" step="1"></div>
       <div class="form-group"><label>Valor de χ² (para probabilidades directas)</label><input type="number" id="c-val" value="7.0" min="0" step="any"></div>
       <div class="form-group"><label>Nivel de significancia α (para valores críticos)</label><input type="number" id="c-alpha" value="0.05" min="0.001" max="0.5" step="any"></div>
@@ -208,6 +235,13 @@
   <div class="grid">
     <div class="card">
       <h2>📈 Distribución F de Fisher <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">F = (χ₁²/d₁) / (χ₂²/d₂) &nbsp;&nbsp; F(d₁, d₂) [d₁=gl num., d₂=gl den.]</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: d₂/(d₂−2)  (d₂&gt;2) &nbsp;|&nbsp; Solo valores ≥ 0. Asimétrica derecha.</span>
+        <span class="fb-row">Uso principal: comparar varianzas · ANOVA · regresión.</span>
+      </div>
       <div class="form-group"><label>Grados de libertad numerador (df₁)</label><input type="number" id="f-df1" value="5" min="1" step="1"></div>
       <div class="form-group"><label>Grados de libertad denominador (df₂)</label><input type="number" id="f-df2" value="10" min="1" step="1"></div>
       <div class="form-group"><label>Valor de F (para probabilidades directas)</label><input type="number" id="f-val" value="3.0" min="0" step="any"></div>
@@ -236,6 +270,14 @@
   <div class="grid">
     <div class="card">
       <h2>⚡ Distribución Exponencial <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">f(x) = λ·e^(−λx) &nbsp;&nbsp; x ≥ 0</span>
+        <span class="fb-row">F(x) = P(X ≤ x) = 1 − e^(−λx)</span>
+        <span class="fb-row">F⁻¹(p) = −ln(1−p) / λ</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: 1/λ &nbsp;|&nbsp; Varianza: 1/λ² &nbsp;|&nbsp; Desv. est.: 1/λ</span>
+      </div>
       <div class="form-group"><label>Tasa λ (lambda)</label><input type="number" id="e-lambda" value="0.5" min="0.0001" step="any"></div>
       <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="e-x" value="2.0" min="0" step="any"></div>
       <div class="form-group"><label>Probabilidad p (0-1)</label><input type="number" id="e-p" value="0.90" min="0.001" max="0.999" step="any"></div>
@@ -263,6 +305,12 @@
   <div class="grid">
     <div class="card">
       <h2>🎲 Distribución de Poisson <span class="tag">Discreta</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">P(X = k) = (λ^k · e^(−λ)) / k! &nbsp;&nbsp; k = 0,1,2,…</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: λ &nbsp;|&nbsp; Varianza: λ &nbsp;|&nbsp; Desv. est.: √λ</span>
+      </div>
       <div class="form-group"><label>Media λ (tasa de eventos)</label><input type="number" id="po-lambda" value="3" min="0.001" step="any"></div>
       <div class="form-group"><label>Número de eventos k</label><input type="number" id="po-k" value="4" min="0" step="1"></div>
       <div class="form-group"><label>Percentil p (0-1)</label><input type="number" id="po-p" value="0.90" min="0.001" max="0.999" step="any"></div>
@@ -295,6 +343,13 @@
   <div class="grid">
     <div class="card">
       <h2>🪙 Distribución Binomial <span class="tag">Discreta</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">P(X = k) = C(n,k) · p^k · (1−p)^(n−k) &nbsp;&nbsp; k = 0,1,…,n</span>
+        <span class="fb-row">C(n,k) = n! / (k!·(n−k)!)</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: np &nbsp;|&nbsp; Varianza: np(1−p) &nbsp;|&nbsp; Desv. est.: √(np(1−p))</span>
+      </div>
       <div class="form-group"><label>Número de ensayos (n)</label><input type="number" id="b-n" value="20" min="1" step="1"></div>
       <div class="form-group"><label>Probabilidad de éxito (p)</label><input type="number" id="b-p" value="0.3" min="0" max="1" step="any"></div>
       <div class="form-group"><label>Número de éxitos k</label><input type="number" id="b-k" value="6" min="0" step="1"></div>
@@ -319,6 +374,13 @@
   <div class="grid">
     <div class="card">
       <h2>📏 Distribución Uniforme <span class="tag">Continua</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">f(x) = 1/(b−a) &nbsp;&nbsp; a ≤ x ≤ b</span>
+        <span class="fb-row">F(x) = (x−a)/(b−a) &nbsp;&nbsp; F⁻¹(p) = a + p·(b−a)</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: (a+b)/2 &nbsp;|&nbsp; Varianza: (b−a)²/12 &nbsp;|&nbsp; Desv. est.: (b−a)/√12</span>
+      </div>
       <div class="form-group"><label>Límite inferior (a)</label><input type="number" id="u-a" value="0" step="any"></div>
       <div class="form-group"><label>Límite superior (b)</label><input type="number" id="u-b" value="10" step="any"></div>
       <div class="form-group"><label>Valor de X (para probabilidades directas)</label><input type="number" id="u-x" value="6" step="any"></div>
@@ -347,6 +409,14 @@
   <div class="grid">
     <div class="card">
       <h2>📊 Dist. Muestral de Proporción <span class="tag">Muestral</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">p̂ ~ N(p, p(1−p)/n) &nbsp; si np≥5 y n(1−p)≥5 &nbsp; [TLC]</span>
+        <span class="fb-row">σ_p̂ = √(p(1−p)/n) &nbsp;&nbsp; (error estándar)</span>
+        <span class="fb-row">z = (p̂ − p) / σ_p̂</span>
+        <hr class="fb-sep">
+        <span class="fb-row">Media: p &nbsp;|&nbsp; Varianza: p(1−p)/n</span>
+      </div>
       <div class="form-group"><label>Proporción poblacional (p)</label><input type="number" id="dp-p" value="0.4" min="0.001" max="0.999" step="any"></div>
       <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="dp-n" value="100" min="1" step="1"></div>
       <div class="form-group"><label>Proporción muestral observada (p̂)</label><input type="number" id="dp-phat" value="0.45" min="0" max="1" step="any"></div>
@@ -371,6 +441,13 @@
   <div class="grid">
     <div class="card">
       <h2>📉 Dist. Muestral de la Media (TLC) <span class="tag">Muestral</span></h2>
+      <div class="formula-box">
+        <span class="fb-title">Fórmulas clave</span>
+        <span class="fb-row">X̄ ~ N(μ, σ²/n) &nbsp; (por TLC cuando n ≥ 30)</span>
+        <span class="fb-row">σ_x̄ = σ/√n &nbsp;&nbsp; (error estándar)</span>
+        <span class="fb-row">z = (x̄ − μ) / σ_x̄</span>
+        <span class="fb-row">Pob. finita: σ_x̄ = (σ/√n)·√((N−n)/(N−1))</span>
+      </div>
       <div class="form-group"><label>Media poblacional (μ)</label><input type="number" id="dm-mu" value="100" step="any"></div>
       <div class="form-group"><label>Desviación estándar poblacional (σ)</label><input type="number" id="dm-sigma" value="15" min="0.001" step="any"></div>
       <div class="form-group"><label>Tamaño de muestra (n)</label><input type="number" id="dm-n" value="36" min="1" step="1"></div>
@@ -413,6 +490,11 @@
       <button class="ic-btn" id="ic-btn4" onclick="setICType(4)">μ₁−μ₂ (Z, σ conocidas)</button>
       <button class="ic-btn" id="ic-btn5" onclick="setICType(5)">μ₁−μ₂ (t, σ desconocidas)</button>
       <button class="ic-btn" id="ic-btn6" onclick="setICType(6)">p₁−p₂ proporciones</button>
+    </div>
+
+    <div id="ic-formula-box" class="formula-box" style="margin-top:0;margin-bottom:14px">
+      <span class="fb-title">Fórmula del intervalo</span>
+      <span id="ic-formula-text" class="fb-row">x̄ ± z_(α/2) · σ/√n</span>
     </div>
 
     <label style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Tipo de intervalo</label>
@@ -526,6 +608,11 @@
       <button class="ic-btn"        id="ph-btn-t2welch"onclick="setPHType('t2welch')">t Welch — μ₁−μ₂ (var. distintas)</button>
       <button class="ic-btn"        id="ph-btn-z2p"    onclick="setPHType('z2p')">Z — p₁−p₂ (proporciones)</button>
       <button class="ic-btn"        id="ph-btn-fv"     onclick="setPHType('fv')">F — σ₁²/σ₂² (varianzas)</button>
+    </div>
+
+    <div id="ph-formula-ref" class="formula-box" style="margin-top:0;margin-bottom:10px">
+      <span class="fb-title">Estadístico de prueba</span>
+      <span id="ph-formula-ref-text" class="fb-row">Z = (x̄ − μ₀) / (σ/√n)  ~  N(0,1)</span>
     </div>
 
     <label style="font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Hipótesis alternativa H₁</label>
@@ -1095,18 +1182,38 @@ const IC_TAIL_DESC = {
   3: '◀ <strong>Cola inferior</strong> (unilateral izquierda): el parámetro puede ser cualquier valor <em>menor</em> que el límite superior. Usa z_α o t_α. IC = (−∞ , x̄ + E]'
 };
 
+const IC_FORMULAS = {
+  1: 'x̄ ± z_(α/2) · σ/√n\nSE = σ/√n  |  Dist. Normal estándar',
+  2: 'x̄ ± t_(α/2, n−1) · s/√n\nSE = s/√n  |  Dist. t con n−1 grados de libertad',
+  3: 'p̂ ± z_(α/2) · √(p̂(1−p̂)/n)\nSE = √(p̂(1−p̂)/n)  |  Condición: np̂ ≥ 5 y n(1−p̂) ≥ 5',
+  4: '(x̄₁−x̄₂) ± z_(α/2) · √(σ₁²/n₁ + σ₂²/n₂)\nSE = √(σ₁²/n₁ + σ₂²/n₂)  |  Dist. Normal estándar',
+  5: {
+    pool: '(x̄₁−x̄₂) ± t_(α/2, n₁+n₂−2) · sp·√(1/n₁+1/n₂)\nsp = √(((n₁−1)s₁²+(n₂−1)s₂²)/(n₁+n₂−2))  |  varianzas iguales',
+    welch: '(x̄₁−x̄₂) ± t_(α/2, gl_W) · √(s₁²/n₁+s₂²/n₂)\ngl_W = (s₁²/n₁+s₂²/n₂)² / ((s₁²/n₁)²/(n₁−1)+(s₂²/n₂)²/(n₂−1))  |  Welch'
+  },
+  6: '(p̂₁−p̂₂) ± z_(α/2) · √(p̂₁(1−p̂₁)/n₁ + p̂₂(1−p̂₂)/n₂)\nCondición: nᵢp̂ᵢ ≥ 5 y nᵢ(1−p̂ᵢ) ≥ 5 para cada grupo'
+};
+
+function updateICFormula() {
+  let text = IC_FORMULAS[icType];
+  if (icType === 5) text = IC_FORMULAS[5][ic5Var];
+  document.getElementById('ic-formula-text').textContent = text;
+}
+
 function setICType(t) {
   icType = t;
   [1,2,3,4,5,6].forEach(i => {
     document.getElementById(`ic-t${i}`).style.display = i === t ? 'block' : 'none';
     document.getElementById(`ic-btn${i}`).classList.toggle('active', i === t);
   });
+  updateICFormula();
 }
 
 function setIC5Var(v) {
   ic5Var = v;
   document.getElementById('ic5-pool-btn1').classList.toggle('active', v === 'pool');
   document.getElementById('ic5-pool-btn2').classList.toggle('active', v === 'welch');
+  updateICFormula();
 }
 
 function setICTail(t) {
@@ -1491,6 +1598,18 @@ const PH_HYPS = {
   fv:      { param:'σ₁²/σ₂²', ref:'1', stat:'F' }
 };
 
+const PH_STAT_FORMULAS = {
+  z1:      'Z = (x̄ − μ₀) / (σ/√n)  ~  N(0,1)',
+  t1:      't = (x̄ − μ₀) / (s/√n)  ~  t(n−1)',
+  z1p:     'Z = (p̂ − p₀) / √(p₀(1−p₀)/n)  ~  N(0,1)',
+  chi2v:   'χ² = (n−1)·s² / σ₀²  ~  χ²(n−1)',
+  z2:      'Z = ((x̄₁−x̄₂) − D₀) / √(σ₁²/n₁+σ₂²/n₂)  ~  N(0,1)',
+  t2pool:  't = ((x̄₁−x̄₂) − D₀) / (sp·√(1/n₁+1/n₂))  ~  t(n₁+n₂−2)\nsp = √(((n₁−1)s₁²+(n₂−1)s₂²)/(n₁+n₂−2))',
+  t2welch: 't = ((x̄₁−x̄₂) − D₀) / √(s₁²/n₁+s₂²/n₂)  ~  t(gl_W)\ngl_W = (s₁²/n₁+s₂²/n₂)² / ((s₁²/n₁)²/(n₁−1)+(s₂²/n₂)²/(n₂−1))',
+  z2p:     'Z = (p̂₁−p̂₂) / √(p̄(1−p̄)(1/n₁+1/n₂))  ~  N(0,1)\np̄ = (x₁+x₂)/(n₁+n₂)  (proporción agrupada)',
+  fv:      'F = s₁²/s₂²  ~  F(n₁−1, n₂−1)'
+};
+
 function setPHType(type) {
   phType = type;
   PH_TYPES.forEach(t => {
@@ -1498,6 +1617,7 @@ function setPHType(type) {
     document.getElementById(`ph-btn-${t}`).classList.toggle('active', t === type);
   });
   updatePHHypDisplay();
+  document.getElementById('ph-formula-ref-text').textContent = PH_STAT_FORMULAS[type] || '';
 }
 
 function setPHTail(tail) {
@@ -1821,6 +1941,8 @@ function drawPHChart(dist, statObs, critLow, critHigh, alpha, gl, statLabel) {
 // Inicializar hipótesis al cargar
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ic-tail-desc').innerHTML = IC_TAIL_DESC[1];
+  updateICFormula();
+  document.getElementById('ph-formula-ref-text').textContent = PH_STAT_FORMULAS['z1'];
   updatePHHypDisplay();
 });
 </script>
